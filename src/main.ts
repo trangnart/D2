@@ -16,6 +16,7 @@ const context = canvas.getContext("2d")!;
 let isDrawing = false;
 let x = 0;
 let y = 0;
+const drawingData: number[][] = [];
 
 canvas.addEventListener("mousedown", (e: MouseEvent) => {
   x = e.offsetX;
@@ -25,15 +26,21 @@ canvas.addEventListener("mousedown", (e: MouseEvent) => {
 
 canvas.addEventListener("mousemove", (e: MouseEvent) => {
   if (isDrawing) {
-    drawLine(context, x, y, e.offsetX, e.offsetY);
-    x = e.offsetX;
-    y = e.offsetY;
+    const currentX = e.offsetX;
+    const currentY = e.offsetY;
+    drawingData.push([x, y, currentX, currentY]);
+    x = currentX;
+    y = currentY;
+    const event = new CustomEvent("drawing-changed");
+    canvas.dispatchEvent(event);
   }
 });
 
 window.addEventListener("mouseup", (e: MouseEvent) => {
   if (isDrawing) {
-    drawLine(context, x, y, e.offsetX, e.offsetY);
+    const currentX = e.offsetX;
+    const currentY = e.offsetY;
+    drawingData.push([x, y, currentX, currentY]);
     x = 0;
     y = 0;
     isDrawing = false;
@@ -59,4 +66,11 @@ function drawLine(
 const clearButton = document.getElementById("clearButton") as HTMLButtonElement;
 clearButton.addEventListener("click", () => {
   context.clearRect(0, 0, canvas.width, canvas.height);
+});
+
+canvas.addEventListener("drawing-changed", () => {
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  drawingData.forEach((line) => {
+    drawLine(context, line[0], line[1], line[2], line[3]);
+  });
 });
