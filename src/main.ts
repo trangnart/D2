@@ -21,6 +21,7 @@ let isDrawing = false;
 const drawingData: number[][] = [];
 let undoPath: number[][] = [];
 let currentPath: number[] = [];
+let markerSize = 3;
 
 canvas.addEventListener("mousedown", (e: MouseEvent) => {
   startX = e.offsetX;
@@ -52,7 +53,7 @@ canvas.addEventListener("mouseup", () => {
 function drawLine(x1: number, y1: number, x2: number, y2: number) {
   context.beginPath();
   context.strokeStyle = "black";
-  context.lineWidth = 2;
+  context.lineWidth = markerSize;
   context.moveTo(x1, y1);
   context.lineTo(x2, y2);
   context.stroke();
@@ -100,3 +101,13 @@ function redraw() {
     }
   });
 }
+
+const thinButton = document.getElementById("thinButton") as HTMLButtonElement;
+thinButton.addEventListener("click", () => {
+  markerSize = 1;
+});
+
+const thickButton = document.getElementById("thickButton") as HTMLButtonElement;
+thickButton.addEventListener("click", () => {
+  markerSize = 5;
+});
