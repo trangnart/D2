@@ -13,47 +13,43 @@ app.append(header);
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const context = canvas.getContext("2d")!;
 
+let startX = 0;
+let startY = 0;
+let currentX = 0;
+let currentY = 0;
 let isDrawing = false;
-let x = 0;
-let y = 0;
 const drawingData: number[][] = [];
+let undoPath: number[][] = [];
+let currentPath: number[] = [];
 
 canvas.addEventListener("mousedown", (e: MouseEvent) => {
-  x = e.offsetX;
-  y = e.offsetY;
+  startX = e.offsetX;
+  startY = e.offsetY;
   isDrawing = true;
+  currentPath = [startX, startY];
 });
 
 canvas.addEventListener("mousemove", (e: MouseEvent) => {
   if (isDrawing) {
-    const currentX = e.offsetX;
-    const currentY = e.offsetY;
-    drawingData.push([x, y, currentX, currentY]);
-    x = currentX;
-    y = currentY;
-    const event = new CustomEvent("drawing-changed");
-    canvas.dispatchEvent(event);
+    currentX = e.offsetX;
+    currentY = e.offsetY;
+    drawLine(startX, startY, currentX, currentY);
+    startX = currentX;
+    startY = currentY;
+    currentPath.push(startX, startY);
   }
 });
 
-window.addEventListener("mouseup", (e: MouseEvent) => {
+canvas.addEventListener("mouseup", () => {
   if (isDrawing) {
-    const currentX = e.offsetX;
-    const currentY = e.offsetY;
-    drawingData.push([x, y, currentX, currentY]);
-    x = 0;
-    y = 0;
+    drawingData.push(currentPath);
+    currentPath = [];
+    undoPath = [];
     isDrawing = false;
   }
 });
 
-function drawLine(
-  context: CanvasRenderingContext2D,
-  x1: number,
-  y1: number,
-  x2: number,
-  y2: number
-) {
+function drawLine(x1: number, y1: number, x2: number, y2: number) {
   context.beginPath();
   context.strokeStyle = "black";
   context.lineWidth = 2;
@@ -66,11 +62,41 @@ function drawLine(
 const clearButton = document.getElementById("clearButton") as HTMLButtonElement;
 clearButton.addEventListener("click", () => {
   context.clearRect(0, 0, canvas.width, canvas.height);
+  drawingData.length = 0;
+  undoPath.length = 0;
 });
 
-canvas.addEventListener("drawing-changed", () => {
-  context.clearRect(0, 0, canvas.width, canvas.height);
-  drawingData.forEach((line) => {
-    drawLine(context, line[0], line[1], line[2], line[3]);
-  });
+const undoButton = document.getElementById("undoButton") as HTMLButtonElement;
+undoButton.addEventListener("click", () => {
+  if (drawingData.length > 0) {
+    const undo = drawingData.pop();
+    if (undo) {
+      undoPath.push(undo);
+      redraw();
+    }
+  }
 });
+
+const redoButton = document.getElementById("redoButton") as HTMLButtonElement;
+redoButton.addEventListener("click", () => {
+  if (undoPath.length > 0) {
+    const redo = undoPath.pop();
+    if (redo) {
+      drawingData.push(redo);
+      redraw();
+    }
+  }
+});
+
+function redraw() {
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  drawingData.forEach((path) => {
+    for (let i = 0; i < path.length; i += 2) {
+      const x1 = path[i];
+      const y1 = path[i + 1];
+      const x2 = path[i + 2];
+      const y2 = path[i + 3];
+      drawLine(x1, y1, x2, y2);
+    }
+  });
+}
