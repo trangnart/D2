@@ -182,3 +182,14 @@ thickButton.addEventListener("click", () => {
   isSticker = false;
   markerSize = 5;
 });
+
+const customStickerButton = document.getElementById("stickerCustomButton") as HTMLButtonElement;
+customStickerButton.addEventListener("click", () => {
+  const userInput = prompt("Please enter your custom sticker:");
+  if (userInput) {
+    isSticker = true;
+    selectedSticker = userInput;
+    const event = new Event("tool-moved");
+    canvas.dispatchEvent(event);
+  }
+});
