@@ -13,6 +13,12 @@ app.append(header);
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const context = canvas.getContext("2d")!;
 
+canvas.addEventListener("mouseenter", () => {
+  canvas.style.cursor = "crosshair";
+  const event = new Event("tool-moved");
+  canvas.dispatchEvent(event);
+});
+
 let startX = 0;
 let startY = 0;
 let currentX = 0;
