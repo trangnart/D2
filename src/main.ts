@@ -13,12 +13,6 @@ app.append(header);
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const context = canvas.getContext("2d")!;
 
-canvas.addEventListener("mouseenter", () => {
-  canvas.style.cursor = "crosshair";
-  const event = new Event("tool-moved");
-  canvas.dispatchEvent(event);
-});
-
 let startX = 0;
 let startY = 0;
 let currentX = 0;
@@ -29,26 +23,83 @@ let undoPath: number[][] = [];
 let currentPath: number[] = [];
 let markerSize = 3;
 
+let isSticker = false;
+let selectedSticker: string | null = null;
+const stickersData: { x: number; y: number; sticker: string }[] = [];
+
+const sticker1Button = document.getElementById(
+  "sticker1Button"
+) as HTMLButtonElement;
+const sticker2Button = document.getElementById(
+  "sticker2Button"
+) as HTMLButtonElement;
+const sticker3Button = document.getElementById(
+  "sticker3Button"
+) as HTMLButtonElement;
+
+sticker1Button.addEventListener("click", () => {
+  isSticker = true;
+  selectedSticker = "🌸";
+  const event = new Event("tool-moved");
+  canvas.dispatchEvent(event);
+});
+
+sticker2Button.addEventListener("click", () => {
+  isSticker = true;
+  selectedSticker = "❤️";
+  const event = new Event("tool-moved");
+  canvas.dispatchEvent(event);
+});
+
+sticker3Button.addEventListener("click", () => {
+  isSticker = true;
+  selectedSticker = "😊";
+  const event = new Event("tool-moved");
+  canvas.dispatchEvent(event);
+});
+
+canvas.addEventListener("mouseenter", () => {
+  canvas.style.cursor = "crosshair";
+  const event = new Event("tool-moved");
+  canvas.dispatchEvent(event);
+});
+
 canvas.addEventListener("mousedown", (e: MouseEvent) => {
-  startX = e.offsetX;
-  startY = e.offsetY;
-  isDrawing = true;
-  currentPath = [startX, startY];
+  if (!isSticker) {
+    startX = e.offsetX;
+    startY = e.offsetY;
+    isDrawing = true;
+    currentPath = [startX, startY];
+  } else if (isSticker) {
+    const x = e.offsetX;
+    const y = e.offsetY;
+    if (selectedSticker) {
+      stickersData.push({ x, y, sticker: selectedSticker });
+      redraw();
+    }
+  }
 });
 
 canvas.addEventListener("mousemove", (e: MouseEvent) => {
-  if (isDrawing) {
+  if (!isSticker && isDrawing) {
     currentX = e.offsetX;
     currentY = e.offsetY;
     drawLine(startX, startY, currentX, currentY);
     startX = currentX;
     startY = currentY;
     currentPath.push(startX, startY);
+  } else if (isSticker) {
+    currentX = e.offsetX;
+    currentY = e.offsetY;
+    redraw();
+    if (selectedSticker === "🌸") drawSticker(currentX, currentY, "🌸");
+    if (selectedSticker === "😊") drawSticker(currentX, currentY, "😊");
+    if (selectedSticker === "❤️") drawSticker(currentX, currentY, "❤️");
   }
 });
 
 canvas.addEventListener("mouseup", () => {
-  if (isDrawing) {
+  if (!isSticker && isDrawing) {
     drawingData.push(currentPath);
     currentPath = [];
     undoPath = [];
@@ -66,21 +117,30 @@ function drawLine(x1: number, y1: number, x2: number, y2: number) {
   context.closePath();
 }
 
+function drawSticker(x: number, y: number, sticker: string) {
+  context.font = "20px Arial";
+  context.fillText(sticker, x, y);
+}
+
 const clearButton = document.getElementById("clearButton") as HTMLButtonElement;
 clearButton.addEventListener("click", () => {
   context.clearRect(0, 0, canvas.width, canvas.height);
   drawingData.length = 0;
   undoPath.length = 0;
+  stickersData.length = 0;
 });
 
 const undoButton = document.getElementById("undoButton") as HTMLButtonElement;
 undoButton.addEventListener("click", () => {
-  if (drawingData.length > 0) {
+  if (drawingData.length > 0 && !isSticker) {
     const undo = drawingData.pop();
     if (undo) {
       undoPath.push(undo);
       redraw();
     }
+  } else if (stickersData.length > 0 && isSticker) {
+    stickersData.pop();
+    redraw();
   }
 });
 
@@ -106,14 +166,19 @@ function redraw() {
       drawLine(x1, y1, x2, y2);
     }
   });
+  stickersData.forEach((sticker) => {
+    drawSticker(sticker.x, sticker.y, sticker.sticker);
+  });
 }
 
 const thinButton = document.getElementById("thinButton") as HTMLButtonElement;
 thinButton.addEventListener("click", () => {
+  isSticker = false;
   markerSize = 1;
 });
 
 const thickButton = document.getElementById("thickButton") as HTMLButtonElement;
 thickButton.addEventListener("click", () => {
+  isSticker = false;
   markerSize = 5;
 });
