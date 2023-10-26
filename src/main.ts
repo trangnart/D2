@@ -193,3 +193,17 @@ customStickerButton.addEventListener("click", () => {
     canvas.dispatchEvent(event);
   }
 });
+
+const exportButton = document.getElementById("exportButton") as HTMLButtonElement;
+exportButton.addEventListener("click", () => {
+  const tempCanvas = document.createElement("canvas");
+  const temp = tempCanvas.getContext("2d")!;
+  tempCanvas.width = 1024;
+  tempCanvas.height = 1024;
+  temp.scale(4, 4);
+  temp.drawImage(canvas, 0, 0);
+  const anchor = document.createElement("a");
+  anchor.href = tempCanvas.toDataURL("image/png");
+  anchor.download = "sketchpad.png";
+  anchor.click();
+});
