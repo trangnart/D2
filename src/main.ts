@@ -2,7 +2,7 @@ import "./style.css";
 
 const app: HTMLDivElement = document.querySelector("#app")!;
 
-const gameName = "Jane game";
+const gameName = "Sketch Me";
 
 document.title = gameName;
 
@@ -21,42 +21,31 @@ let isDrawing = false;
 const drawingData: number[][] = [];
 let undoPath: number[][] = [];
 let currentPath: number[] = [];
-let markerSize = 3;
+let markerSize = 1;
+const markerSizeLimit = 10;
 
 let isSticker = false;
-let selectedSticker: string | null = null;
+let selectedSticker: string;
 const stickersData: { x: number; y: number; sticker: string }[] = [];
+const stickerArray = ["❤️", "🌸", "😊"];
+let stickerIndex = 0;
 
-const sticker1Button = document.getElementById(
-  "sticker1Button"
-) as HTMLButtonElement;
-const sticker2Button = document.getElementById(
-  "sticker2Button"
-) as HTMLButtonElement;
-const sticker3Button = document.getElementById(
-  "sticker3Button"
+const stickerButton = document.getElementById(
+  "stickerButton"
 ) as HTMLButtonElement;
 
-sticker1Button.addEventListener("click", () => {
+stickerButton.addEventListener("click", () => {
   isSticker = true;
-  selectedSticker = "🌸";
+  selectedSticker = stickerArray[(stickerIndex + 1) % stickerArray.length];
+  stickerIndex = (stickerIndex + 1) % stickerArray.length;
   const event = new Event("tool-moved");
   canvas.dispatchEvent(event);
+  updateSticker();
 });
 
-sticker2Button.addEventListener("click", () => {
-  isSticker = true;
-  selectedSticker = "❤️";
-  const event = new Event("tool-moved");
-  canvas.dispatchEvent(event);
-});
-
-sticker3Button.addEventListener("click", () => {
-  isSticker = true;
-  selectedSticker = "😊";
-  const event = new Event("tool-moved");
-  canvas.dispatchEvent(event);
-});
+function updateSticker() {
+  stickerButton.innerText = `${stickerArray[stickerIndex]}`;
+}
 
 canvas.addEventListener("mouseenter", () => {
   canvas.style.cursor = "crosshair";
@@ -92,9 +81,7 @@ canvas.addEventListener("mousemove", (e: MouseEvent) => {
     currentX = e.offsetX;
     currentY = e.offsetY;
     redraw();
-    if (selectedSticker === "🌸") drawSticker(currentX, currentY, "🌸");
-    if (selectedSticker === "😊") drawSticker(currentX, currentY, "😊");
-    if (selectedSticker === "❤️") drawSticker(currentX, currentY, "❤️");
+    drawSticker(currentX, currentY, selectedSticker);
   }
 });
 
@@ -171,19 +158,32 @@ function redraw() {
   });
 }
 
-const thinButton = document.getElementById("thinButton") as HTMLButtonElement;
-thinButton.addEventListener("click", () => {
+const markerSizeButton = document.getElementById(
+  "markerSizeButton"
+) as HTMLButtonElement;
+markerSizeButton.innerText = `${markerSize}px`;
+
+const markerSizeClick = document.getElementById(
+  "markerSizeButton"
+) as HTMLButtonElement;
+markerSizeClick.addEventListener("click", () => {
   isSticker = false;
-  markerSize = 1;
+  if (markerSize < markerSizeLimit) {
+    markerSize += 1;
+  } else {
+    markerSize = 1;
+  }
+
+  updateMarkerSizeButton();
 });
 
-const thickButton = document.getElementById("thickButton") as HTMLButtonElement;
-thickButton.addEventListener("click", () => {
-  isSticker = false;
-  markerSize = 5;
-});
+function updateMarkerSizeButton() {
+  markerSizeButton.innerText = `${markerSize}px`;
+}
 
-const customStickerButton = document.getElementById("stickerCustomButton") as HTMLButtonElement;
+const customStickerButton = document.getElementById(
+  "stickerCustomButton"
+) as HTMLButtonElement;
 customStickerButton.addEventListener("click", () => {
   const userInput = prompt("Please enter your custom sticker:");
   if (userInput) {
@@ -194,13 +194,15 @@ customStickerButton.addEventListener("click", () => {
   }
 });
 
-const exportButton = document.getElementById("exportButton") as HTMLButtonElement;
+const exportButton = document.getElementById(
+  "exportButton"
+) as HTMLButtonElement;
 exportButton.addEventListener("click", () => {
   const tempCanvas = document.createElement("canvas");
   const temp = tempCanvas.getContext("2d")!;
   tempCanvas.width = 1024;
   tempCanvas.height = 1024;
-  temp.scale(4, 4);
+  temp.scale(2, 2);
   temp.drawImage(canvas, 0, 0);
   const anchor = document.createElement("a");
   anchor.href = tempCanvas.toDataURL("image/png");
