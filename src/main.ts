@@ -26,9 +26,10 @@ const markerSizeLimit = 10;
 
 let isSticker = false;
 let selectedSticker: string;
-const stickersData: { x: number; y: number; sticker: string }[] = [];
+const stickersData: { x: number; y: number; rotate: number; sticker: string }[] = [];
 const stickerArray = ["❤️", "🌸", "😊"];
 let stickerIndex = 0;
+let stickerRotation = 0;
 
 const stickerButton = document.getElementById(
   "stickerButton"
@@ -36,8 +37,10 @@ const stickerButton = document.getElementById(
 
 stickerButton.addEventListener("click", () => {
   isSticker = true;
+  const randomRotation = Math.random() * Math.PI * 2;
   selectedSticker = stickerArray[(stickerIndex + 1) % stickerArray.length];
   stickerIndex = (stickerIndex + 1) % stickerArray.length;
+  stickerRotation = randomRotation;
   const event = new Event("tool-moved");
   canvas.dispatchEvent(event);
   updateSticker();
@@ -63,7 +66,7 @@ canvas.addEventListener("mousedown", (e: MouseEvent) => {
     const x = e.offsetX;
     const y = e.offsetY;
     if (selectedSticker) {
-      stickersData.push({ x, y, sticker: selectedSticker });
+      stickersData.push({ x, y, rotate: stickerRotation, sticker: selectedSticker });
       redraw();
     }
   }
@@ -81,7 +84,7 @@ canvas.addEventListener("mousemove", (e: MouseEvent) => {
     currentX = e.offsetX;
     currentY = e.offsetY;
     redraw();
-    drawSticker(currentX, currentY, selectedSticker);
+    drawSticker(currentX, currentY, stickerRotation, selectedSticker);
   }
 });
 
@@ -104,9 +107,13 @@ function drawLine(x1: number, y1: number, x2: number, y2: number) {
   context.closePath();
 }
 
-function drawSticker(x: number, y: number, sticker: string) {
+function drawSticker(x: number, y: number, rotation: number, sticker: string) {
+  context.save();
+  context.translate(x, y);
+  context.rotate(rotation);
   context.font = "20px Arial";
-  context.fillText(sticker, x, y);
+  context.fillText(sticker, 0, 0);
+  context.restore();
 }
 
 const clearButton = document.getElementById("clearButton") as HTMLButtonElement;
@@ -154,7 +161,7 @@ function redraw() {
     }
   });
   stickersData.forEach((sticker) => {
-    drawSticker(sticker.x, sticker.y, sticker.sticker);
+    drawSticker(sticker.x, sticker.y, sticker.rotate, sticker.sticker);
   });
 }
 
@@ -208,4 +215,12 @@ exportButton.addEventListener("click", () => {
   anchor.href = tempCanvas.toDataURL("image/png");
   anchor.download = "sketchpad.png";
   anchor.click();
+});
+
+const rotateButton = document.getElementById("rotateButton") as HTMLButtonElement;
+rotateButton.addEventListener("click", () => {
+  if (isSticker) {
+    stickerRotation += 45;
+    redraw();
+  }
 });
