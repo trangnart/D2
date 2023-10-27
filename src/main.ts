@@ -26,7 +26,12 @@ const markerSizeLimit = 10;
 
 let isSticker = false;
 let selectedSticker: string;
-const stickersData: { x: number; y: number; rotate: number; sticker: string }[] = [];
+const stickersData: {
+  x: number;
+  y: number;
+  rotate: number;
+  sticker: string;
+}[] = [];
 const stickerArray = ["❤️", "🌸", "😊"];
 let stickerIndex = 0;
 let stickerRotation = 0;
@@ -66,7 +71,12 @@ canvas.addEventListener("mousedown", (e: MouseEvent) => {
     const x = e.offsetX;
     const y = e.offsetY;
     if (selectedSticker) {
-      stickersData.push({ x, y, rotate: stickerRotation, sticker: selectedSticker });
+      stickersData.push({
+        x,
+        y,
+        rotate: stickerRotation,
+        sticker: selectedSticker,
+      });
       redraw();
     }
   }
@@ -217,7 +227,9 @@ exportButton.addEventListener("click", () => {
   anchor.click();
 });
 
-const rotateButton = document.getElementById("rotateButton") as HTMLButtonElement;
+const rotateButton = document.getElementById(
+  "rotateButton"
+) as HTMLButtonElement;
 rotateButton.addEventListener("click", () => {
   if (isSticker) {
     stickerRotation += 45;
