@@ -13,14 +13,73 @@ app.append(header);
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const context = canvas.getContext("2d")!;
 
+class MarkerLine {
+  path: number[][];
+
+  constructor(initialX: number, initialY: number) {
+    this.path = [[initialX, initialY]];
+  }
+
+  drag(x: number, y: number) {
+    this.path.push([x, y]);
+  }
+
+  display(ctx: CanvasRenderingContext2D) {
+    for (let i = 0; i < this.path.length - 1; i++) {
+      const [x1, y1] = this.path[i];
+      const [x2, y2] = this.path[i + 1];
+      this.drawLine(ctx, x1, y1, x2, y2);
+    }
+  }
+
+  private drawLine(
+    ctx: CanvasRenderingContext2D,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number
+  ) {
+    ctx.beginPath();
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = markerSize;
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    ctx.closePath();
+  }
+}
+
+class Sticker {
+  x: number;
+  y: number;
+  rotate: number;
+  sticker: string;
+
+  constructor(x: number, y: number, rotate: number, sticker: string) {
+    this.x = x;
+    this.y = y;
+    this.rotate = rotate;
+    this.sticker = sticker;
+  }
+
+  display(ctx: CanvasRenderingContext2D) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rotate);
+    ctx.font = "20px Arial";
+    ctx.fillText(this.sticker, 0, 0);
+    ctx.restore();
+  }
+}
+
 let startX = 0;
 let startY = 0;
 let currentX = 0;
 let currentY = 0;
 let isDrawing = false;
-const drawingData: number[][] = [];
-let undoPath: number[][] = [];
-let currentPath: number[] = [];
+const drawingData: MarkerLine[] = [];
+let undoPath: MarkerLine[] = [];
+let currentPath: MarkerLine;
 let markerSize = 1;
 const markerSizeLimit = 10;
 
@@ -66,17 +125,12 @@ canvas.addEventListener("mousedown", (e: MouseEvent) => {
     startX = e.offsetX;
     startY = e.offsetY;
     isDrawing = true;
-    currentPath = [startX, startY];
+    currentPath = new MarkerLine(startX, startY);
   } else if (isSticker) {
     const x = e.offsetX;
     const y = e.offsetY;
     if (selectedSticker) {
-      stickersData.push({
-        x,
-        y,
-        rotate: stickerRotation,
-        sticker: selectedSticker,
-      });
+      stickersData.push(new Sticker(x, y, stickerRotation, selectedSticker));
       redraw();
     }
   }
@@ -86,10 +140,10 @@ canvas.addEventListener("mousemove", (e: MouseEvent) => {
   if (!isSticker && isDrawing) {
     currentX = e.offsetX;
     currentY = e.offsetY;
+    currentPath.drag(currentX, currentY);
     drawLine(startX, startY, currentX, currentY);
     startX = currentX;
     startY = currentY;
-    currentPath.push(startX, startY);
   } else if (isSticker) {
     currentX = e.offsetX;
     currentY = e.offsetY;
@@ -101,29 +155,21 @@ canvas.addEventListener("mousemove", (e: MouseEvent) => {
 canvas.addEventListener("mouseup", () => {
   if (!isSticker && isDrawing) {
     drawingData.push(currentPath);
-    currentPath = [];
+    currentPath = new MarkerLine(0, 0);
     undoPath = [];
     isDrawing = false;
   }
 });
 
 function drawLine(x1: number, y1: number, x2: number, y2: number) {
-  context.beginPath();
-  context.strokeStyle = "black";
-  context.lineWidth = markerSize;
-  context.moveTo(x1, y1);
-  context.lineTo(x2, y2);
-  context.stroke();
-  context.closePath();
+  const markerLine = new MarkerLine(x1, y1);
+  markerLine.drag(x2, y2);
+  markerLine.display(context);
 }
 
 function drawSticker(x: number, y: number, rotation: number, sticker: string) {
-  context.save();
-  context.translate(x, y);
-  context.rotate(rotation);
-  context.font = "20px Arial";
-  context.fillText(sticker, 0, 0);
-  context.restore();
+  const stickerObj = new Sticker(x, y, rotation, sticker);
+  stickerObj.display(context);
 }
 
 const clearButton = document.getElementById("clearButton") as HTMLButtonElement;
@@ -161,17 +207,17 @@ redoButton.addEventListener("click", () => {
 
 function redraw() {
   context.clearRect(0, 0, canvas.width, canvas.height);
-  drawingData.forEach((path) => {
-    for (let i = 0; i < path.length; i += 2) {
-      const x1 = path[i];
-      const y1 = path[i + 1];
-      const x2 = path[i + 2];
-      const y2 = path[i + 3];
-      drawLine(x1, y1, x2, y2);
-    }
+  drawingData.forEach((markerLine) => {
+    markerLine.display(context);
   });
   stickersData.forEach((sticker) => {
-    drawSticker(sticker.x, sticker.y, sticker.rotate, sticker.sticker);
+    const stickerObj = new Sticker(
+      sticker.x,
+      sticker.y,
+      sticker.rotate,
+      sticker.sticker
+    );
+    stickerObj.display(context);
   });
 }
 
